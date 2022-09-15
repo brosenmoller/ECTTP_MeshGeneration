@@ -4,15 +4,16 @@ public class TerrainGenerator : MonoBehaviour
 {
     [Header("General Settings")]
     public bool autoUpdate;
-    [SerializeField][Range(1, 100)] int xSize;
-    [SerializeField][Range(1, 100)] int zSize;
+    const int terrainChunkSize = 241;
+    [SerializeField][Range(0, 6)] int levelOfDetail;
 
     [Header("Perlin Noise")]
     [SerializeField][Range(0, 100)] float maxHeigth;
-    [SerializeField][Range(.1f, 100)] float scale;
+    [SerializeField][Range(50, 500)] float scale;
     [SerializeField][Range(1, 10)] int octaves;
     [SerializeField][Range(0, 1f)] float persistence;
     [SerializeField][Range(1, 10)] float lacunarity;
+    [SerializeField] AnimationCurve heigthCurve;
 
     [Header("Randomization")]
     [SerializeField] int seed;
@@ -23,13 +24,16 @@ public class TerrainGenerator : MonoBehaviour
 
     [Header("References")]
     [SerializeField] MeshFilter meshFilter;
+    [SerializeField] MeshCollider meshCollider;
 
     public void GenerateTerrain()
     {
-        float[,] heightMap = Noise.GenerateNoiseMap(xSize, zSize, scale, octaves, persistence, lacunarity, seed, offset);
-        MeshData meshData = TerrainMeshGenerator.GenerateTerrainMesh(heightMap, gradient, maxHeigth);
+        float[,] heightMap = Noise.GenerateNoiseMap(terrainChunkSize, terrainChunkSize, scale, octaves, persistence, lacunarity, seed, offset);
+        MeshData meshData = TerrainMeshGenerator.GenerateTerrainMesh(heightMap, gradient, maxHeigth, heigthCurve, levelOfDetail);
 
-        meshFilter.mesh = meshData.CreateMesh();
+        Mesh mesh = meshData.CreateMesh();
+        meshFilter.sharedMesh = mesh;
+        if (meshCollider != null) meshCollider.sharedMesh = mesh;
     }
 }
 
