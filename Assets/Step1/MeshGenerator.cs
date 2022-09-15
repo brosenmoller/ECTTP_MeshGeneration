@@ -22,6 +22,7 @@ public class MeshGenerator : MonoBehaviour
 
     Vector3[] vertices;
     int[] triangles;
+    Vector2[] uvs;
 
     void Start()
     {
@@ -99,12 +100,29 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
+    void CreateUV()
+    {
+        // Generate UV map for overlaying images
+        uvs = new Vector2[vertices.Length];
+
+        for (int i = 0, z = 0; z <= zSize; z++)
+        {
+            for (int x = 0; x <= xSize; x++)
+            {
+                uvs[i] = new Vector2((float)x / xSize, (float)z / zSize);
+
+                i++;
+            }
+        }
+    }
+
     void UpdateMesh()
     {
         mesh.Clear();
 
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        if (uvs != null) mesh.uv = uvs;
 
         mesh.RecalculateNormals();
     }
