@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 // Followed tutorial by brackeys https://www.youtube.com/watch?v=eJEpeUH1EMg
 
@@ -6,6 +7,7 @@ using UnityEngine;
 public class MeshGenerator : MonoBehaviour
 {
     [Header("General Settings")]
+    public bool autoUpdate;
     [SerializeField] [Range(1, 100)] int xSize;
     [SerializeField] [Range(1, 100)] int zSize;
 
@@ -14,49 +16,60 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] [Range(.1f, 20)] float scale;
 
     [Header("Offset Moving")]
-    [SerializeField] [Range(.001f, .1f)] float scrollSpeed;
+    [SerializeField] [Range(-.1f, .1f)] float scrollSpeed;
 
     float offsetX, offsetZ;
 
-    Mesh mesh;
+    MeshFilter meshFilter;
 
     Vector3[] vertices;
     int[] triangles;
     Vector2[] uvs;
 
-    void Start()
+    [HideInInspector] public bool isScrolling;
+
+    public void DrawMesh()
     {
-        mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        //// PerlinNoise offset for randomnes
+        //offsetX = Random.Range(0f, 9999f);
+        //offsetZ = Random.Range(0f, 9999f);
+
+        CreateShape();
+        UpdateMesh();
     }
 
-    void Update()
+    public void Scroll()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        isScrolling = !isScrolling;
+        if (isScrolling)
         {
-            // PerlinNoise offset for randomnes
-            offsetX = Random.Range(0f, 9999f);
-            offsetZ = Random.Range(0f, 9999f);
-
-            CreateShape();
-            UpdateMesh();
+            StartCoroutine(Scrolling());
         }
+        else
+        {
+            StopAllCoroutines();
+        }
+    }
 
-        if (Input.GetKey(KeyCode.UpArrow))
+    IEnumerator Scrolling()
+    {
+        while (true)
         {
             offsetX += scrollSpeed;
             offsetZ += scrollSpeed;
 
             CreateShape();
             UpdateMesh();
-        }
-        else if (Input.GetKey(KeyCode.DownArrow))
-        {
-            offsetX -= scrollSpeed;
-            offsetZ -= scrollSpeed;
 
-            CreateShape();
-            UpdateMesh();
+            yield return null;
+        }
+    }
+
+    private void Update()
+    {
+        if (isScrolling)
+        {
+            Scroll();
         }
     }
 
@@ -118,13 +131,19 @@ public class MeshGenerator : MonoBehaviour
 
     void UpdateMesh()
     {
-        mesh.Clear();
+        if (meshFilter == null) meshFilter = GetComponent<MeshFilter>();
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        Mesh mesh = new()
+        {
+            vertices = vertices,
+            triangles = triangles
+        };
+
         if (uvs != null) mesh.uv = uvs;
 
         mesh.RecalculateNormals();
+        
+        meshFilter.mesh = mesh;
     }
 
     float CalculatePerlinNoise(float x, float z)
