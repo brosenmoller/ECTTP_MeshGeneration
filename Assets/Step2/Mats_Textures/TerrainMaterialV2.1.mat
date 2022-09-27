@@ -99,8 +99,8 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.78
-    - _Cutoff_1: -0.8
-    - _Cutoff_2: -0.83
+    - _Cutoff_1: 0.8
+    - _Cutoff_2: 0.8
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -109,7 +109,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HeightCutoff: 3.54
-    - _HeightCutoff2: 37.11
+    - _HeightCutoff2: 23.27
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -127,10 +127,10 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 0.9150943, g: 0.49783427, b: 0.49783427, a: 1}
     - _Color0: {r: 0.9811321, g: 0.9545602, b: 0.64328945, a: 0}
-    - _Color2b: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 0}
-    - _Color_1a: {r: 0.42745098, g: 0.6313726, b: 0.47843137, a: 0}
-    - _Color_1b: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 0}
-    - _Color_2a: {r: 1, g: 1, b: 1, a: 0}
+    - _Color2b: {r: 1, g: 1, b: 1, a: 0}
+    - _Color_1a: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 0}
+    - _Color_1b: {r: 0.42745098, g: 0.6313726, b: 0.47843137, a: 0}
+    - _Color_2a: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Grass: {r: 0.22499107, g: 0.4528302, b: 0.30020007, a: 0}
     - _Rock: {r: 0.3962264, g: 0.3962264, b: 0.3962264, a: 0}
