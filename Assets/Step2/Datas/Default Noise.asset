@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Default Noise
   m_EditorClassIdentifier: 
   autoUpdate: 1
-  scale: 269
+  scale: 264
   octaves: 6
-  persistence: 0.389
+  persistence: 0.394
   lacunarity: 2.51
-  maxHeigth: 85.9
+  maxHeigth: 80.4
   heigthCurve:
     serializedVersion: 2
     m_Curve:

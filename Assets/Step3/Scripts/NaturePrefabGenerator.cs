@@ -40,7 +40,7 @@ public class NaturePrefabGenerator : MonoBehaviour
                         );
 
                         // Set the correct y value 
-                        randomPos.y = hit.point.y;
+                        randomPos.y = hit.point.y + naturePrefab.prefab.transform.localPosition.y;
 
                         // Instantiate the gameObject
                         GameObject lastInstantiated = Instantiate(naturePrefab.prefab, randomPos, Quaternion.Euler(randomRotation));

@@ -15,7 +15,7 @@ MonoBehaviour:
   autoUpdate: 1
   scale: 500
   octaves: 6
-  persistence: 0.368
+  persistence: 0.3632
   lacunarity: 2.55
   maxHeigth: 79.8
   heigthCurve:
