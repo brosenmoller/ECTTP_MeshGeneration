@@ -1,20 +1,14 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
-
-public class NaturePrefabGenerator : MonoBehaviour
+public static class NaturePrefabGenerator
 {
-    [Header("General")]
-    [SerializeField] Transform parent;
+    static System.Random random;
 
-    [Header("Prefabs")]
-    [SerializeField] NaturePrefab[] naturePrefabs;
-
-    public void GenerateNaturePrefabs(int seed, int chunkSize)
+    public static NaturePrefabSpawnable[] GenerateNaturePrefabs(int seed, int chunkSize, Vector2 center, NaturePrefab[] naturePrefabs)
     {
-        foreach (Transform child in parent)
-        {
-            Destroy(child.gameObject);
-        }
+        List<NaturePrefabSpawnable> naturePrefabSpawnables = new();
+        random = new System.Random(seed * center.GetHashCode());
 
         for (int prefabIndex = 0; prefabIndex < naturePrefabs.Length; prefabIndex++)
         {
@@ -23,19 +17,24 @@ public class NaturePrefabGenerator : MonoBehaviour
             // loop for calulated number based on frequency and the world dimensions
             for (int i = 0; i < (naturePrefab.frequency * chunkSize); i++)
             {
-                Vector3 randomPos = GenerateRandomPosition(seed, chunkSize, (i + 1) * (prefabIndex + 1));
+                Vector3 randomPos = GenerateRandomPosition(chunkSize);
+                randomPos.x += center.x;
+                randomPos.z += center.y;
 
                 // If Raycast doesn't hit anything
                 if (Physics.Raycast(randomPos, Vector3.down, out RaycastHit hit, 100))
                 {
-                    // Check if object can be spawned on the this ground type
+                    float normalDot = Vector3.Dot(hit.normal, Vector3.up);
+
+                    // Check if object can be spawned here
                     if (hit.point.y > naturePrefab.minMaxAltitude.x && hit.point.y < naturePrefab.minMaxAltitude.y &&
+                        !(normalDot > naturePrefab.minMaxSteepness.x && normalDot < naturePrefab.minMaxSteepness.y) &&
                         hit.transform.CompareTag("Terrain"))
                     {
                         // Set random rotation
                         Vector3 randomRotation = new(
                             naturePrefab.prefab.transform.rotation.eulerAngles.x, 
-                            UnityEngine.Random.Range(0, 361), 
+                            random.Next(0, 361), 
                             0
                         );
 
@@ -43,22 +42,24 @@ public class NaturePrefabGenerator : MonoBehaviour
                         randomPos.y = hit.point.y + naturePrefab.prefab.transform.localPosition.y;
 
                         // Instantiate the gameObject
-                        GameObject lastInstantiated = Instantiate(naturePrefab.prefab, randomPos, Quaternion.Euler(randomRotation));
-                        
-                        // Set all initial values
-                        lastInstantiated.transform.localScale = naturePrefab.prefab.transform.localScale;
-                        lastInstantiated.transform.SetParent(parent.transform, true);
+                        naturePrefabSpawnables.Add(new NaturePrefabSpawnable(
+                            naturePrefab.prefab, 
+                            randomPos, 
+                            Quaternion.Euler(randomRotation), 
+                            naturePrefab.prefab.transform.localScale
+                        ));
                     }
                 }
             }
         }
+
+        return naturePrefabSpawnables.ToArray();
     }
 
-    Vector3 GenerateRandomPosition(int seed, int size, int seedOffset) 
+    static Vector3 GenerateRandomPosition(int size) 
     {
-        System.Random random = new(seed + seedOffset.GetHashCode());
-        float xCoord = UnityEngine.Random.Range(-(size / 2), size / 2);
-        float zCoord = UnityEngine.Random.Range(-(size / 2), size / 2);
+        float xCoord = random.Next(-(size / 2), size / 2);
+        float zCoord = random.Next(-(size / 2), size / 2);
 
         return new Vector3(xCoord, 50, zCoord);
     } 
@@ -68,9 +69,25 @@ public class NaturePrefabGenerator : MonoBehaviour
 public class NaturePrefab
 {
     public GameObject prefab;
-    [Range(0, 1)]
+    [Range(0, 100)]
     public float frequency;
     public float groupness;
     public Vector2 minMaxAltitude;
     public Vector2 minMaxSteepness;
+}
+
+public struct NaturePrefabSpawnable
+{
+    public GameObject prefab;
+    public Vector3 position;
+    public Quaternion rotation;
+    public Vector3 scale;
+
+    public NaturePrefabSpawnable(GameObject prefab, Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        this.prefab = prefab;
+        this.position = position;
+        this.rotation = rotation;
+        this.scale = scale;
+    }
 }

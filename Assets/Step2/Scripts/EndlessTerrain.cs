@@ -8,7 +8,7 @@ public class EndlessTerrain : MonoBehaviour
 {
     const float viewerMoveThresholdForChunkUpdate = 25;
     const float sqrViewerMoveThresholdForChunkUpdate = viewerMoveThresholdForChunkUpdate * viewerMoveThresholdForChunkUpdate;
-    const float colliderGenerationDistanceThreshold = 5;
+    const float colliderGenerationDistanceThreshold = 25;
 
     [Header("Viewer")]
     public Transform viewer;
@@ -28,9 +28,8 @@ public class EndlessTerrain : MonoBehaviour
 
     int chunkSize;
     int chunksVisibleInViewDistance;
-
-    Dictionary<Vector2, TerrainChunk> terrainChunkDict = new();
-    static List<TerrainChunk> visibleTerrainChunks = new();
+    readonly Dictionary<Vector2, TerrainChunk> terrainChunkDict = new();
+    static readonly List<TerrainChunk> visibleTerrainChunks = new();
 
     void Start()
     {
@@ -45,7 +44,7 @@ public class EndlessTerrain : MonoBehaviour
 
     void Update()
     {
-        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / terrainGenerator.globalTerrainData.uniformScale;
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / terrainGenerator.noiseData.uniformScale;
 
         if ((lastViewerPostion - viewerPosition).sqrMagnitude > sqrViewerMoveThresholdForChunkUpdate)
         {
@@ -57,7 +56,7 @@ public class EndlessTerrain : MonoBehaviour
         {
             foreach (TerrainChunk chunk in visibleTerrainChunks)
             {
-                chunk.UpdateCollisionMesh();
+                chunk.SetCollider();
             }
         }
     }
@@ -99,28 +98,29 @@ public class EndlessTerrain : MonoBehaviour
 
     public class TerrainChunk 
     {
+        readonly GameObject meshObject;
+        readonly MeshRenderer meshRenderer;
+        readonly MeshFilter meshFilter;
+        readonly MeshCollider meshCollider;
+
+        readonly GameObject water;
+        readonly int size;
+
+        readonly LODInfo[] detailLevels;
+        readonly LODMesh[] lodMeshes;
+        readonly int colliderLODIndex;
+
         public Vector2 coord;
 
-        GameObject meshObject;
         Vector2 position;
         Bounds bounds;
-
-        MeshRenderer meshRenderer;
-        MeshFilter meshFilter;
-        MeshCollider meshCollider;
-
-        LODInfo[] detailLevels;
-        LODMesh[] lodMeshes;
-        int colliderLODIndex;
-
         TerrainData terrainData;
+
         bool terrainDataReceived;
         bool hasSetCollider;
         bool hasCheckedForWater;
-        int previousLODIndex = -1;
 
-        GameObject water;
-        int size;
+        int previousLODIndex = -1;
 
         public TerrainChunk(Vector2 coord, int size, LODInfo[] detailLevels, int colliderLODIndex, Transform parent, Material material, GameObject water)
         {
@@ -135,14 +135,15 @@ public class EndlessTerrain : MonoBehaviour
             Vector3 positionV3 = new(position.x, 0, position.y);
 
             meshObject = new GameObject("Terrain Chunk");
+            meshObject.tag = "Terrain";
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshRenderer.material = material;
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshCollider = meshObject.AddComponent<MeshCollider>();
 
-            meshObject.transform.position = positionV3 * terrainGenerator.globalTerrainData.uniformScale;
+            meshObject.transform.position = positionV3 * terrainGenerator.noiseData.uniformScale;
             meshObject.transform.parent = parent;
-            meshObject.transform.localScale = Vector3.one * terrainGenerator.globalTerrainData.uniformScale;
+            meshObject.transform.localScale = Vector3.one * terrainGenerator.noiseData.uniformScale;
 
             SetVisible(false);
 
@@ -150,8 +151,8 @@ public class EndlessTerrain : MonoBehaviour
             for (int i = 0; i < detailLevels.Length; i++)
             {
                 lodMeshes[i] = new LODMesh(detailLevels[i].lod);
-                lodMeshes[i].updateCallback += UpdateTerrainChunk;
-                if (i == colliderLODIndex) lodMeshes[i].updateCallback += UpdateCollisionMesh;
+                lodMeshes[i].UpdateCallback += UpdateTerrainChunk;
+                if (i == colliderLODIndex) lodMeshes[i].UpdateCallback += SetCollider;
             }
 
             terrainGenerator.RequestTerrainData(position, OnTerrainDataReceived);
@@ -169,11 +170,11 @@ public class EndlessTerrain : MonoBehaviour
         {
             GameObject waterObject = Instantiate(
                 water, 
-                new Vector3(position.x, terrainGenerator.globalTerrainData.waterLevel, position.y), 
+                new Vector3(position.x, terrainGenerator.noiseData.waterLevel, position.y), 
                 Quaternion.identity
             );
             waterObject.transform.localScale = new Vector3(size / 7.5f, 1, size / 7.5f);
-            waterObject.transform.parent = meshObject.transform;
+            waterObject.transform.SetParent(meshObject.transform);
         }
 
         public void UpdateTerrainChunk()
@@ -209,7 +210,7 @@ public class EndlessTerrain : MonoBehaviour
 
                 if (!hasCheckedForWater)
                 {
-                    if (terrainData.lowestPoint < terrainGenerator.globalTerrainData.waterLevel)
+                    if (terrainData.lowestPoint < terrainGenerator.noiseData.waterLevel)
                     {
                         SpawnWater();
                     }
@@ -227,7 +228,7 @@ public class EndlessTerrain : MonoBehaviour
             
         }
 
-        public void UpdateCollisionMesh()
+        public void SetCollider()
         {
             if (hasSetCollider) return;
 
@@ -247,9 +248,20 @@ public class EndlessTerrain : MonoBehaviour
                 {
                     meshCollider.sharedMesh = lodMeshes[colliderLODIndex].mesh;
                     hasSetCollider = true;
+                    
+                    SpawnNatureObjects();
+
                 }
             }
-        } 
+        }
+
+        void SpawnNatureObjects()
+        {
+            GameObject naturePrefabParent = new("NaturePrefabs");
+            naturePrefabParent.transform.SetParent(meshObject.transform);
+
+            terrainGenerator.GenerateNaturePrefabs(position, naturePrefabParent.transform);
+        }
 
         public void SetVisible(bool visible)
         {
@@ -265,11 +277,16 @@ public class EndlessTerrain : MonoBehaviour
     class LODMesh
     {
         public Mesh mesh;
-        public bool hasRequestedMesh;
-        public bool hasMesh;
+        public NaturePrefabData naturePrefabData;
         public int lod;
 
-        public event Action updateCallback;
+        public bool hasRequestedMesh;
+        public bool hasMesh;
+
+        public bool hasRequestedNaturePrefabs;
+        public bool hasNaturePrefabs;
+
+        public event Action UpdateCallback;
 
         public LODMesh(int lod)
         {
@@ -281,13 +298,27 @@ public class EndlessTerrain : MonoBehaviour
             hasMesh = true;
             mesh = meshData.CreateMesh();
 
-            updateCallback();
+            UpdateCallback();
         }
 
         public void RequestMesh(TerrainData terrainData)
         {
             hasRequestedMesh = true;
             terrainGenerator.RequestMeshData(terrainData, lod, OnMeshDataReceived);
+        }
+
+        void OnNaturePrefabDataReceived(NaturePrefabData naturePrefabData)
+        {
+            hasNaturePrefabs = true;
+            this.naturePrefabData = naturePrefabData;
+
+            UpdateCallback();
+        }
+
+        public void RequestNaturePrefabs(Vector2 center)
+        {
+            hasRequestedNaturePrefabs = true;
+            terrainGenerator.RequestNaturePrefabData(center, OnNaturePrefabDataReceived);
         }
     }
 

@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Threading;
 using System.Collections.Generic;
+using UnityEngine.Rendering.Universal.Internal;
 
 // Uses thinks from: https://www.youtube.com/watch?v=f0m73RsBik4&list=PLFt_AvWsXl0eBW2EiBtl_sxmDtSgZBxB3&index=8
 
@@ -17,15 +18,16 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] Vector2 offset;
 
     [Header("Data")]
-    public GlobalTerrainData globalTerrainData;
     public NoiseData noiseData;
 
     [Header("References")]
     [SerializeField] MeshFilter meshFilter;
     [SerializeField] MeshCollider meshCollider;
+    [SerializeField] Transform naturePrefabParent;
 
-    Queue<TerrainThreadInfo<TerrainData>> terrainDataThreadInfoQueue = new();
-    Queue<TerrainThreadInfo<MeshData>> meshDataThreadInfoQueue = new();
+    readonly Queue<TerrainThreadInfo<TerrainData>> terrainDataThreadInfoQueue = new();
+    readonly Queue<TerrainThreadInfo<MeshData>> meshDataThreadInfoQueue = new();
+    readonly Queue<TerrainThreadInfo<NaturePrefabData>> naturePrefabInfoThreadQueue = new();
 
     void OnValuesUpdated()
     {
@@ -53,8 +55,28 @@ public class TerrainGenerator : MonoBehaviour
         meshFilter.sharedMesh = mesh;
         if (meshCollider != null) meshCollider.sharedMesh = mesh;
 
-        GetComponent<NaturePrefabGenerator>()?.GenerateNaturePrefabs(seed, TerrainChunkSize);
+        if (noiseData.spawnNatureObjects) {
+            foreach (Transform child in naturePrefabParent)
+            {
+                child.gameObject.SetActive(false);
+            }
+
+            GenerateNaturePrefabs(Vector2.zero, naturePrefabParent);
+        }
     }
+
+    public void GenerateNaturePrefabs(Vector2 center, Transform parent)
+    {
+        NaturePrefabSpawnable[] spawnables = NaturePrefabGenerator.GenerateNaturePrefabs(seed, TerrainChunkSize, center, noiseData.naturePrefabs);
+
+        foreach (NaturePrefabSpawnable spawnable in spawnables)
+        {
+            GameObject natureObject = Instantiate(spawnable.prefab, spawnable.position, spawnable.rotation);
+            natureObject.transform.localScale = spawnable.scale;
+            natureObject.transform.SetParent(parent);
+        }
+    }
+
     public void RequestTerrainData(Vector2 center, Action<TerrainData> callback)
     {
         ThreadStart threadStart = delegate
@@ -100,6 +122,29 @@ public class TerrainGenerator : MonoBehaviour
         {
             meshDataThreadInfoQueue.Enqueue(new TerrainThreadInfo<MeshData>(callback, meshData));
         }
+    } 
+    public void RequestNaturePrefabData(Vector2 center, Action<NaturePrefabData> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            NaturePrefabDataThread(center, callback);
+        };
+
+        
+        
+        new Thread(threadStart).Start();
+    }
+
+    void NaturePrefabDataThread(Vector2 center, Action<NaturePrefabData> callback)
+    {
+        NaturePrefabData naturePrefabData = new(
+            NaturePrefabGenerator.GenerateNaturePrefabs(seed, TerrainChunkSize, center, noiseData.naturePrefabs)
+        );
+
+        lock (naturePrefabInfoThreadQueue)
+        {
+            naturePrefabInfoThreadQueue.Enqueue(new TerrainThreadInfo<NaturePrefabData>(callback, naturePrefabData));
+        }
     }
     
 
@@ -126,11 +171,6 @@ public class TerrainGenerator : MonoBehaviour
 
     private void OnValidate()
     {
-        if (globalTerrainData != null)
-        {
-            globalTerrainData.OnValuesUpdated -= OnValuesUpdated;
-            globalTerrainData.OnValuesUpdated += OnValuesUpdated;
-        }
         if (noiseData != null)
         {
             noiseData.OnValuesUpdated -= OnValuesUpdated;
@@ -161,7 +201,16 @@ public struct TerrainData
         this.heightMap = heightMap;
         this.lowestPoint = lowestPoint;
     }
+}
 
+public struct NaturePrefabData
+{
+    public NaturePrefabSpawnable[] spawnables;
+
+    public NaturePrefabData(NaturePrefabSpawnable[] spawnables)
+    {
+        this.spawnables = spawnables;
+    }
 }
 
 

@@ -106,7 +106,7 @@ Material:
     - _AlphaClip: 0
     - _Blend: 0
     - _BlendCuttoff: 0
-    - _BlendNoiseMultiplier: 2
+    - _BlendNoiseMultiplier: -2.2
     - _BlendNoiseScale: 0.05
     - _BumpScale: 1
     - _ClearCoatMask: 0
@@ -123,11 +123,11 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HeightBlendCutoff: 1.55
-    - _HeightBlendCutoff1: 1.3
+    - _HeightBlendCutoff1: 1.61
     - _HeightBlendCutoff2: 20
     - _HeightBlendFactor: 4.73
     - _HeightBlendPower: 76.86
-    - _HeightCutoff: 3.71
+    - _HeightCutoff: 4.52
     - _HeightCutoff2: 40.97
     - _Metallic: 0
     - _OcclusionStrength: 1
@@ -137,7 +137,7 @@ Material:
     - _ReceiveShadows: 1
     - _SlopeBlendFactor: 6.9
     - _SlopeBlendPower: 5.71
-    - _SlopeCutoff_1: 0.29
+    - _SlopeCutoff_1: 0.31
     - _SlopeCutoff_2: 0.01
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
@@ -145,7 +145,7 @@ Material:
     - _SrcBlend: 1
     - _Surface: 0
     - _Texture0Scale: 20
-    - _Texture_0_Scale: 40
+    - _Texture_0_Scale: 40.42
     - _Texture_1a_scale: 20
     - _Texture_1b_scale: 50
     - _Texture_2a_scale: 20

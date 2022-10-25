@@ -3,6 +3,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Noise Data", menuName = "Data/NoiseData", order = 3)]
 public class NoiseData : UpdatableData
 {
+    [Header("General")]
+    public float uniformScale = 1f;
+    public float waterLevel = 2.6f;
+
     [Header("Perlin Noise")]
     [Range(50, 500)] public float scale;
     [Range(1, 10)] public int octaves;
@@ -12,4 +16,8 @@ public class NoiseData : UpdatableData
     [Header("Height")]
     [Range(0, 100)] public float maxHeigth;
     public AnimationCurve heigthCurve;
+
+    [Header("Nature Prefabs")]
+    public bool spawnNatureObjects;
+    public NaturePrefab[] naturePrefabs;
 }
