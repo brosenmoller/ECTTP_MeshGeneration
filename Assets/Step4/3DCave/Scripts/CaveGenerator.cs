@@ -22,6 +22,7 @@ public class CaveGenerator : MonoBehaviour
 
     [Header("Mesh")]
     [SerializeField] bool generateMesh;
+    [SerializeField] int surfaceLevel;
     [SerializeField] float squareSize;
 
 
@@ -31,11 +32,11 @@ public class CaveGenerator : MonoBehaviour
     {
         switch (mapType)
         {
-            case MapType.PerlinNoise: map = Noise3D.GenerateMap(mapSize, scale, perlinCutoff, seed); break;
+            case MapType.PerlinNoise: map = Noise3D.GenerateMap(mapSize, scale, seed); break;
             case MapType.CellularAutomata: map = CellularAutomata3D.GenerateMap(mapSize, seed, smoothInterations, randomFillPercent, wallCuttoffLower, wallCuttoffUpper); break;
         }
 
-        GetComponent<MarchingCubesMesh>().GenerateMesh(map, squareSize);
+        GetComponent<MarchingCubesMesh>().GenerateMesh(map, squareSize, surfaceLevel);
     }
 
     private void OnDrawGizmos()

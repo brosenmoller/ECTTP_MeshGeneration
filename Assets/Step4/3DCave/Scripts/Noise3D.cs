@@ -29,14 +29,14 @@ public static class Noise3D
         return map;
     }
 
-    public static float[,,] GenerateMap(int mapSize, float scale, int seed)
+    public static int[,,] GenerateMap(int mapSize, float scale, int seed)
     {
         System.Random rand = new(seed);
         int offsetX = rand.Next(0, 100000);
         int offsetY = rand.Next(0, 100000);
         int offsetZ = rand.Next(0, 100000);
 
-        float[,,] map = new float[mapSize, mapSize, mapSize];
+        int[,,] map = new int[mapSize, mapSize, mapSize];
 
         for (int x = 0; x < mapSize; x++)
         {
@@ -44,11 +44,11 @@ public static class Noise3D
             {
                 for (int z = 0; z < mapSize; z++)
                 {
-                    map[x, y, z] = PerlinNoise3D(
+                    map[x, y, z] = Mathf.RoundToInt(PerlinNoise3D(
                         (x + offsetX) * scale,
                         (y + offsetY) * scale,
                         (z + offsetZ) * scale
-                    );
+                    ) * 100);
                 }
             }
         }
