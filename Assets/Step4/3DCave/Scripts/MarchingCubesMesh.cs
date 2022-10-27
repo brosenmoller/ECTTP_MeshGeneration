@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
 
 public class MarchingCubesMesh : MonoBehaviour
 {
@@ -77,6 +76,14 @@ public class MarchingCubesMesh : MonoBehaviour
             if (cube.edges[edgeIndex].vertexIndex == -1)
             {
                 cube.edges[edgeIndex].vertexIndex = vertices.Count;
+
+                // Interpolation
+                int cornerIndexA = MarchingCubesTriTable.cornerIndexAFromEdge[edgeIndex];
+                int cornerIndexB = MarchingCubesTriTable.cornerIndexBFromEdge[edgeIndex];
+
+                cube.edges[edgeIndex].position = VertexInterpolate(cube.corners[cornerIndexA], cube.corners[cornerIndexB]);
+                // end interpolation
+
                 vertices.Add(cube.edges[edgeIndex].position);
             }
 
@@ -84,23 +91,24 @@ public class MarchingCubesMesh : MonoBehaviour
         }
     }
 
-    Vector3 VertexInterpolate(Vector3 p1, Vector3 p2, int levelP1, int levelP2)
+    Vector3 VertexInterpolate(ControlNode corner1, ControlNode corner2)
     {
        float mu;
-       Vector3 p;
+       Vector3 interpolatedVector;
 
-       if (Mathf.Abs(surfaceLevel - levelP1) < 0.00001)
-          return p1;
-       if (Mathf.Abs(surfaceLevel - levelP2) < 0.00001)
-          return p2;
-       if (Mathf.Abs(levelP1 - levelP2) < 0.00001)
-          return p1;
-       mu = (surfaceLevel - levelP1) / (levelP2 - levelP1);
-       p.x = p1.x + mu * (p2.x - p1.x);
-       p.y = p1.y + mu * (p2.y - p1.y);
-       p.z = p1.z + mu * (p2.z - p1.z);
+       if (Mathf.Abs(surfaceLevel - corner1.isolevel) < 0.00001)
+          return corner1.position;
+       if (Mathf.Abs(surfaceLevel - corner2.isolevel) < 0.00001)
+          return corner2.position;
+       if (Mathf.Abs(corner1.isolevel - corner2.isolevel) < 0.00001)
+          return corner1.position;
 
-       return p;
+       mu = (surfaceLevel - corner1.isolevel) / (corner2.isolevel - corner1.isolevel);
+       interpolatedVector.x = corner1.position.x + mu * (corner2.position.x - corner1.position.x);
+       interpolatedVector.y = corner1.position.y + mu * (corner2.position.y - corner1.position.y);
+       interpolatedVector.z = corner1.position.z + mu * (corner2.position.z - corner1.position.z);
+
+       return interpolatedVector;
     }
 
     public class CubeGrid

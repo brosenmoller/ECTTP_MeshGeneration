@@ -32,11 +32,11 @@
                 {
                     if (x == 0 || x == mapSize - 1 || y == 0 || y == mapSize - 1 || z == 0 || z == mapSize - 1)
                     {
-                        map[x, y, z] = 1;
+                        map[x, y, z] = 100;
                     }
                     else
                     {
-                        map[x, y, z] = rand.Next(0, 100) < randomFillPercent ? 1 : 0;
+                        map[x, y, z] = rand.Next(0, 100) < randomFillPercent ? 100 : 0;
                     }
                 }
             }
@@ -55,7 +55,7 @@
 
                     if (surroundingWallCount > wallCutoffUpper)
                     {
-                        map[x, y, z] = 1;
+                        map[x, y, z] = 100;
                     }
                     else if (surroundingWallCount < wallCutoffLower)
                     {
@@ -80,7 +80,7 @@
                     {
                         if (nextX != gridX || nextY != gridY || nextZ != gridZ)
                         {
-                            wallCount += map[nextX, nextY, nextZ];
+                            wallCount += map[nextX, nextY, nextZ] / 100;
                         }
                     }
                     else

@@ -260,5 +260,35 @@ public static class MarchingCubesTriTable
         new int[] { 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
         new int[] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
     };
+
+    public static readonly int[] cornerIndexAFromEdge = new int[] {
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3
+    };
+
+    public static readonly int[] cornerIndexBFromEdge = new int[] {
+        1,
+        2,
+        3,
+        0,
+        5,
+        6,
+        7,
+        4,
+        4,
+        5,
+        6,
+        7
+    };
 }
 
