@@ -15,11 +15,11 @@ MonoBehaviour:
   autoUpdate: 1
   uniformScale: 1
   waterLevel: 2.6
-  scale: 272
+  scale: 327
   octaves: 6
-  persistence: 0.394
+  persistence: 0.393
   lacunarity: 2.51
-  maxHeigth: 80.4
+  maxHeigth: 69.1
   heigthCurve:
     serializedVersion: 2
     m_Curve:

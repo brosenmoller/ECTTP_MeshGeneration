@@ -177,43 +177,36 @@ public class MarchingCubesMesh : MonoBehaviour
 
     public class Cube
     {
-        public ControlNode topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft,
-                           topBackLeft, topBackRight, bottomBackRight, bottomBackLeft;
-
-        public Node topFrontCentre, middleFrontRightCentre, bottomFrontCentre, middleFrontLeftCentre,
-                    topLeftCentre, topRightCentre, bottomLeftCentre, bottomRightCentre,
-                    topBackCentre, middleBackRightCentre, bottomBackCentre, middleBackLeftCentre;
-
         public ControlNode[] corners  = new ControlNode[8];
         public Node[] edges = new Node[12];
 
         public Cube(ControlNode topFrontLeft, ControlNode topFrontRight, ControlNode bottomFrontRight, ControlNode bottomFrontLeft, ControlNode topBackLeft, ControlNode topBackRight, ControlNode bottomBackRight, ControlNode bottomBackLeft)
         {
             // Corners
-            this.bottomBackLeft = corners[0] = bottomBackLeft;
-            this.bottomBackRight = corners[1] = bottomBackRight;
-            this.bottomFrontRight = corners[2] = bottomFrontRight;
-            this.bottomFrontLeft = corners[3] = bottomFrontLeft;
-            this.topBackLeft = corners[4] = topBackLeft;
-            this.topBackRight = corners[5] = topBackRight;
-            this.topFrontRight = corners[6] = topFrontRight;
-            this.topFrontLeft = corners[7] = topFrontLeft;
+            corners[0] = bottomBackLeft;
+            corners[1] = bottomBackRight;
+            corners[2] = bottomFrontRight;
+            corners[3] = bottomFrontLeft;
+            corners[4] = topBackLeft;
+            corners[5] = topBackRight;
+            corners[6] = topFrontRight;
+            corners[7] = topFrontLeft;
 
             // Edges
-            bottomBackCentre = edges[0] = bottomBackLeft.right;
-            bottomRightCentre = edges[1] = bottomFrontRight.forward;
-            bottomFrontCentre = edges[2] = bottomFrontLeft.right;
-            bottomLeftCentre = edges[3] = bottomFrontLeft.forward;
+            edges[0] = bottomBackLeft.right;
+            edges[1] = bottomFrontRight.forward;
+            edges[2] = bottomFrontLeft.right;
+            edges[3] = bottomFrontLeft.forward;
             
-            topBackCentre = edges[4] = topBackLeft.right;
-            topRightCentre = edges[5] = topFrontRight.forward;
-            topFrontCentre = edges[6] = topFrontLeft.right;
-            topLeftCentre = edges[7] = topFrontLeft.forward;
+            edges[4] = topBackLeft.right;
+            edges[5] = topFrontRight.forward;
+            edges[6] = topFrontLeft.right;
+            edges[7] = topFrontLeft.forward;
 
-            middleBackLeftCentre = edges[8] = bottomBackLeft.above;
-            middleBackRightCentre = edges[9] = bottomBackRight.above;
-            middleFrontRightCentre = edges[10] = bottomFrontRight.above;
-            middleFrontLeftCentre = edges[11] = bottomFrontLeft.above;
+            edges[8] = bottomBackLeft.above;
+            edges[9] = bottomBackRight.above;
+            edges[10] = bottomFrontRight.above;
+            edges[11] = bottomFrontLeft.above;
         }
     }
 
