@@ -1,0 +1,41 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+int mapSize = 256;
+RWStructuredBuffer<int> map;
+int wallCutoff = 4;
+
+int SurroundingWallCount(int gridX, int gridY)
+{
+    int wallCount = 0;
+
+    for (int nextX = gridX - 1; nextX <= gridX + 1; nextX++)
+    {
+        for (int nextY = gridY - 1; nextY <= gridY + 1; nextY++)
+        {
+            if (nextX >= 0 && nextX < mapSize && nextY >= 0 && nextY < mapSize)
+            {
+                if (nextX != gridX || nextY != gridY)
+                {
+                    wallCount += map[nextX + nextY * mapSize]; 
+                }
+            }
+            else
+            {
+                wallCount++;
+            }
+        }
+    }
+
+    return wallCount;
+}
+
+
+[numthreads(16, 16, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	int surroundingWallCount = SurroundingWallCount(id.x, id.y);
+
+    if (surroundingWallCount > wallCutoff) map[id.x + id.y * mapSize] = 1;
+    else map[id.x + id.y * mapSize] = 0;
+}

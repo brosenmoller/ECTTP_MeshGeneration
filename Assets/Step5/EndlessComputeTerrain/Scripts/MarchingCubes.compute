@@ -1,0 +1,91 @@
+// Source Partially Sebastian Lague: https://github.com/SebLague/Marching-Cubes/blob/master/Assets/Scripts/Compute/MarchingCubes.compute
+
+#pragma kernel March
+#include "MarchTables.compute"
+
+struct Triangle {
+    float3 vertexC;
+    float3 vertexB;
+    float3 vertexA;
+};
+
+RWStructuredBuffer<float> map;
+AppendStructuredBuffer<Triangle> triangles;
+float surfaceLevel;
+uint mapSize;
+float squareSize;
+
+float3 interpolateVerts(float4 v1, float4 v2) {
+    float t = (surfaceLevel - v1.w) / (v2.w - v1.w);
+    return v1.xyz + t * (v2.xyz-v1.xyz);
+}
+
+int indexFromCoord(int x, int y, int z) {
+    return z * mapSize * mapSize + y * mapSize + x;
+}
+
+float4 cubeCorner(uint x, uint y, uint z)
+{
+    float isoLevel = map[x + y * mapSize + z * mapSize * mapSize];
+
+    return float4(
+        -1 * (float)mapSize * squareSize / 2 + x * squareSize + squareSize / 2,
+        -1 * (float)mapSize * squareSize / 2 + y * squareSize + squareSize / 2,
+        -1 * (float)mapSize * squareSize / 2 + z * squareSize + squareSize / 2,
+        isoLevel
+    );
+}
+
+[numthreads(8,8,8)]
+void March (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= mapSize-1 || id.y >= mapSize-1 || id.z >= mapSize-1) {
+        return;
+    } 
+
+    // 8 corners of the current cube
+    float4 cubeCorners[8] = {
+        cubeCorner(id.x, id.y, id.z),
+        cubeCorner(id.x + 1, id.y, id.z),
+        cubeCorner(id.x + 1, id.y, id.z + 1),
+        cubeCorner(id.x, id.y, id.z + 1),
+        cubeCorner(id.x, id.y + 1, id.z),
+        cubeCorner(id.x + 1, id.y + 1, id.z),
+        cubeCorner(id.x + 1, id.y + 1, id.z + 1),
+        cubeCorner(id.x, id.y + 1, id.z + 1)
+    };
+
+    // Calculate unique index for each cube configuration.
+    // There are 256 possible values
+    // A value of 0 means cube is entirely inside surface; 255 entirely outside.
+    // The value is used to look up the edge table, which indicates which edges of the cube are cut by the isosurface.
+    int cubeIndex = 0;
+    if (cubeCorners[0].w < surfaceLevel) cubeIndex |= 1;
+    if (cubeCorners[1].w < surfaceLevel) cubeIndex |= 2;
+    if (cubeCorners[2].w < surfaceLevel) cubeIndex |= 4;
+    if (cubeCorners[3].w < surfaceLevel) cubeIndex |= 8;
+    if (cubeCorners[4].w < surfaceLevel) cubeIndex |= 16;
+    if (cubeCorners[5].w < surfaceLevel) cubeIndex |= 32;
+    if (cubeCorners[6].w < surfaceLevel) cubeIndex |= 64;
+    if (cubeCorners[7].w < surfaceLevel) cubeIndex |= 128;
+
+    // Create triangles for current cube configuration
+    for (int i = 0; triangulation[cubeIndex][i] != -1; i +=3) {
+        // Get indices of corner points A and B for each of the three edges
+        // of the cube that need to be joined to form the triangle.
+        int a0 = cornerIndexAFromEdge[triangulation[cubeIndex][i]];
+        int b0 = cornerIndexBFromEdge[triangulation[cubeIndex][i]];
+
+        int a1 = cornerIndexAFromEdge[triangulation[cubeIndex][i+1]];
+        int b1 = cornerIndexBFromEdge[triangulation[cubeIndex][i+1]];
+
+        int a2 = cornerIndexAFromEdge[triangulation[cubeIndex][i+2]];
+        int b2 = cornerIndexBFromEdge[triangulation[cubeIndex][i+2]];
+
+        Triangle tri;
+        tri.vertexA = interpolateVerts(cubeCorners[a0], cubeCorners[b0]);
+        tri.vertexB = interpolateVerts(cubeCorners[a1], cubeCorners[b1]);
+        tri.vertexC = interpolateVerts(cubeCorners[a2], cubeCorners[b2]);
+        triangles.Append(tri);
+    }
+}
