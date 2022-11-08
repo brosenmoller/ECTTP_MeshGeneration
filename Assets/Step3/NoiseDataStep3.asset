@@ -102,7 +102,7 @@ MonoBehaviour:
   naturePrefabs:
   - prefab: {fileID: 1973228233241776061, guid: d90c349721b4e694fad80a76d87b2578,
       type: 3}
-    frequency: 1
+    frequency: 1.9
     groupness: 0
     minMaxAltitude: {x: 4, y: 20}
     minMaxSteepness: {x: 0, y: 0.05}

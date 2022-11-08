@@ -4,11 +4,12 @@ public class ComputedTerrainGenerator : MonoBehaviour
 {
     [Header("General")]
     public bool autoUpdate;
-    [SerializeField] int mapSize;
+    public int chunkSize;
     [SerializeField] int seed;
 
     [Header("Noise")]
     [SerializeField][Range(0, 1)] float surfaceLevel;
+    [SerializeField][Range(0, 100)] int offset;
     [SerializeField] float scale;
     [Range(1, 10)] public int octaves;
     [Range(0, 1f)] public float persistence;
@@ -17,7 +18,7 @@ public class ComputedTerrainGenerator : MonoBehaviour
 
     [Header("Mesh")]
     [SerializeField] bool generateMesh;
-    [SerializeField] float squareSize;
+    public float squareSize;
     [SerializeField] ComputedMarchingCubesMesh meshGenerator;
     [SerializeField] MeshFilter meshFilter;
     [SerializeField] bool gpuGeneration;
@@ -26,32 +27,58 @@ public class ComputedTerrainGenerator : MonoBehaviour
     [SerializeField] ComputeShader noiseCompute;
     [SerializeField] ComputeShader marchingCubesCompute;
 
-    float[] map;
+    [Header("Nature Prefabs")]
+    [SerializeField] bool spawnNatureObjects;
+    [SerializeField] NaturePrefab[] naturePrefabs;
+
+    int offsetX = 0;
+    int offsetY = 0;
+    int offsetZ = 0;
+    System.Random rand;
 
     public void GenerateTerrain()
     {
-        if (mapSize == 0 || mapSize % 8 != 0) return;
+        if (chunkSize == 0 || chunkSize % 8 != 0) return;
 
-        map = new float[mapSize * mapSize * mapSize];
-
-        GenerateNoise();
+        float[] map = GenerateNoise(new Vector3Int(offset, 0, 0));
         
         if (generateMesh)
         {
-            if (gpuGeneration) GenerateMesh();
-            else meshGenerator.GenerateMesh(map, squareSize, surfaceLevel, mapSize);
+            if (gpuGeneration) GenerateMesh(meshFilter, map);
+            else meshGenerator.GenerateMesh(map, squareSize, surfaceLevel, chunkSize);
         }
     }
 
-    private void GenerateNoise()
+    public void GenerateNaturePrefabs(Vector2 center, Transform parent, int chunkSize)
     {
+        NaturePrefabSpawnable[] spawnables = NaturePrefabGenerator.GenerateNaturePrefabs(seed, chunkSize, center, naturePrefabs);
+
+        foreach (NaturePrefabSpawnable spawnable in spawnables)
+        {
+            GameObject natureObject = Instantiate(spawnable.prefab, spawnable.position, spawnable.rotation);
+            natureObject.transform.localScale = spawnable.scale;
+            natureObject.transform.SetParent(parent);
+        }
+    }
+
+    public float[] GenerateNoise(Vector3Int baseOffset)
+    {
+        float[] map = new float[chunkSize * chunkSize * chunkSize];
+
         ComputeBuffer mapBuffer = new(map.Length, sizeof(float));
         mapBuffer.SetData(map);
 
-        System.Random rand = new(seed);
-        int offsetX = rand.Next(0, 100000);
-        int offsetY = rand.Next(0, 100000);
-        int offsetZ = rand.Next(0, 100000);
+        rand ??= new(seed);
+        if (offsetX == 0)
+        {
+            offsetX = rand.Next(0, 100000);
+            offsetY = rand.Next(0, 100000);
+            offsetZ = rand.Next(0, 100000);
+        }
+
+        int currentOffsetX = offsetX + baseOffset.x;
+        int currentOffsetY = offsetY + baseOffset.y;
+        int currentOffsetZ = offsetZ + baseOffset.z;
 
         noiseCompute.SetBuffer(0, "map", mapBuffer);
         noiseCompute.SetFloat("scale", scale);
@@ -59,23 +86,26 @@ public class ComputedTerrainGenerator : MonoBehaviour
         noiseCompute.SetFloat("lacunarity", lacunarity);
         noiseCompute.SetFloat("persistence", persistence);
         noiseCompute.SetFloat("weightMultiplier", weightMultiplier);
-        noiseCompute.SetInt("mapSize", mapSize);
-        noiseCompute.SetInts("noiseOffset", offsetX, offsetY, offsetZ);
+        noiseCompute.SetInt("mapSize", chunkSize);
+        noiseCompute.SetInts("noiseOffset", currentOffsetX, currentOffsetY, currentOffsetZ);
 
-        noiseCompute.Dispatch(0, mapSize / 8, mapSize / 8, mapSize / 8);
+        noiseCompute.Dispatch(0, chunkSize / 8, chunkSize / 8, chunkSize / 8);
 
         mapBuffer.GetData(map);
         mapBuffer.Dispose();
+
+        return map;
     }
 
     // Source partially by Sebastion Lague https://github.com/SebLague/Marching-Cubes/blob/master/Assets/Scripts/MeshGenerator.cs
-    private void GenerateMesh()
+    public void GenerateMesh(MeshFilter meshFilter, float[] map)
     {
-        int numVoxelsPerAxis = mapSize - 1;
+        int numVoxelsPerAxis = chunkSize - 1;
         int numVoxels = numVoxelsPerAxis * numVoxelsPerAxis * numVoxelsPerAxis;
         int maxTriangleCount = numVoxels * 5;
 
         ComputeBuffer mapBuffer = new(map.Length, sizeof(float));
+        mapBuffer.SetData(map);
         ComputeBuffer trianglesBuffer = new(maxTriangleCount, sizeof(float) * 3 * 3, ComputeBufferType.Append);
         ComputeBuffer triCountBuffer = new(1, sizeof(int), ComputeBufferType.Raw);
         trianglesBuffer.SetCounterValue(0);
@@ -83,10 +113,10 @@ public class ComputedTerrainGenerator : MonoBehaviour
         marchingCubesCompute.SetBuffer(0, "map", mapBuffer);
         marchingCubesCompute.SetBuffer(0, "triangles", trianglesBuffer);
         marchingCubesCompute.SetFloat("surfaceLevel", surfaceLevel);
-        marchingCubesCompute.SetInt("mapSize", mapSize);
+        marchingCubesCompute.SetInt("mapSize", chunkSize);
         marchingCubesCompute.SetFloat("squareSize", squareSize);
 
-        marchingCubesCompute.Dispatch(0, mapSize / 8, mapSize / 8, mapSize / 8);
+        marchingCubesCompute.Dispatch(0, chunkSize / 8, chunkSize / 8, chunkSize / 8);
 
         ComputeBuffer.CopyCount(trianglesBuffer, triCountBuffer, 0);
         int[] triCountArray = { 0 };

@@ -334,5 +334,4 @@ public class EndlessTerrain : MonoBehaviour
             get { return visibleDistanceThreshold * visibleDistanceThreshold; }
         }
     }
-
 }

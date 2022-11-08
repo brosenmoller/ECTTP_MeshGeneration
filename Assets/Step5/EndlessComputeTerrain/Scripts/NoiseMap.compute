@@ -50,9 +50,9 @@ float standard2DNoise(float x, float y)
     float amplitude = 1;
     float weight = 1;
     for (int j =0; j < octaves; j ++) {
-        float n = snoise2D(float2(
-            (x + noiseOffset.x) * scale, 
-            (y + noiseOffset.z) * scale
+        float n = snoise(float2(
+            (x + noiseOffset.x) * 0.01, 
+            (y + noiseOffset.z) * 0.01
         ));
         float v = 1-abs(n);
         v = v*v;

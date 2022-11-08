@@ -292,7 +292,6 @@ public class MarchingSquaresMesh : MonoBehaviour
                     squares[x, y] = new Square(controlNodes[x, y + 1], controlNodes[x + 1, y + 1], controlNodes[x + 1, y], controlNodes[x, y]);
                 }
             }
-
         }
     }
 
